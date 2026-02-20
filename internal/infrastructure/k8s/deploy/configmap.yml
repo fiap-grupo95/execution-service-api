@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: execution-service-api
+data:
+    MONGODB_DATABASE: "execution-service-db"
+    MONGO_SEED_DEFAULT_PASSWORD: "abc123"
+    JWT_TTL: "24h"
+    GIN_MODE: "release"
