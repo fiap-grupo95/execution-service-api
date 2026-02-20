@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: execution-service-api-deployment
+    namespace: execution-service-api
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: execution-service-api
+    template:
+        metadata:
+            labels:
+                app: execution-service-api
+            annotations:
+              newrelic.com/integrations: "true"
+        spec:
+          containers:
+            - name: execution-service-api
+              image: mandaapag03/execution-service-api:latest
+              ports:
+                - containerPort: 8080
+              resources:
+                requests:
+                  memory: "128Mi"
+                  cpu: "100m"
+                limits:
+                  memory: "200Mi"
+                  cpu: "200m"
+              envFrom:
+                - secretRef:
+                    name: app-secret
+                - configMapRef:
+                    name: app-config
+              volumeMounts:
+                - mountPath: /app/data
+                  name: app-data
+
+          volumes:
+            - name: app-data

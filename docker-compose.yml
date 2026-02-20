@@ -1,0 +1,99 @@
+services:
+  app:
+    container_name: execution-service-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    env_file:
+      - .env
+    environment:
+      MONGODB_URI: ${MONGODB_URI}
+      MONGODB_DATABASE: ${MONGODB_DATABASE}
+      MONGO_SEED_DEFAULT_PASSWORD: ${MONGO_SEED_DEFAULT_PASSWORD}
+    networks:
+      - app_network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - app_network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  dev:
+    image: golang:1.24
+    working_dir: /app
+    volumes:
+      - .:/app
+    tty: true
+    command: tail -f /dev/null
+
+  # sonarqube:
+  #   image: sonarqube:latest
+  #   container_name: sonarqube
+  #   restart: always
+  #   ports:
+  #     - '9000:9000'
+  #   environment:
+  #     SONAR_JDBC_URL: jdbc:postgresql://db_postgres_sonar:5433/${POSTGRES_SONAR_DB}
+  #     SONAR_JDBC_USERNAME: ${POSTGRES_SONAR_USER}
+  #     SONAR_JDBC_PASSWORD: ${POSTGRES_SONAR_PASSWORD}
+  #   depends_on:
+  #     - db_postgres_sonar
+  #   networks:
+  #     - sonar-net
+  #   volumes:
+  #     - sonar_data:/opt/sonarqube/data
+  #     - sonar_extensions:/opt/sonarqube/extensions
+
+  # db_postgres_sonar:
+  #   image: postgres:17.5
+  #   container_name: db_postgres_sonar
+  #   restart: always
+  #   environment:
+  #     POSTGRES_USER: ${POSTGRES_SONAR_USER}
+  #     POSTGRES_PASSWORD: ${POSTGRES_SONAR_PASSWORD}
+  #     POSTGRES_DB: ${POSTGRES_SONAR_DB}
+  #     POSTGRES_PORT: 5433
+  #   command: -p 5433
+  #   networks:
+  #     - sonar-net
+  #   ports:
+  #     - '5433:5433'
+  #   volumes:
+  #     - postgresql_sonar_data:/var/lib/postgresql/data
+
+networks:
+  default:
+    driver: bridge
+
+  app_network:
+    driver: bridge
+
+  db_network:
+    driver: bridge
+
+  sonar-net:
+    name: sonar-net
+
+volumes:
+  mongodb_data:
+  app_data:
+  sonar_data:
+  sonar_extensions:
+  postgresql_sonar_data:
